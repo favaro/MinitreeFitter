@@ -381,9 +381,9 @@ void MiniTreeFitter1D::simultaneousFit(int sHyp) {
 	  for( int stest = 0 ; stest < 2; stest++ ) {
 	    
 	    _simPdf[stest]->plotOn(plotMgg,LineColor(color[stest]),Slice(*_category,TString::Format("cat%d",c)),ProjWData(*_category,*combData)) ;
-	    // _simPdf[stest]->plotOn(plotMgg,LineColor(color[stest]),LineStyle(kDashed),
-	    // 			   Slice(*_category,TString::Format("cat%d",c)),ProjWData(*_category,*combData),
-	    // 			   Components(bkgExtNameCat+"_pdf")) ;
+	    _simPdf[stest]->plotOn(plotMgg,LineColor(color[stest]),LineStyle(kDashed),
+	     			   Slice(*_category,TString::Format("cat%d",c)),ProjWData(*_category,*combData),
+	     			   Components(bkgExtNameCat+"_pdf")) ;
 	  }
 	  plotMgg->Draw();
       }

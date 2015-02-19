@@ -164,7 +164,7 @@ vector<double> MiniTreeFitter1D::modelBackground( float testMass, string suffixN
   // TCanvas *canWeigthed = new TCanvas("cWeigthed","weigthed mass plot",1000,600);
   // canWeigthed->Divide(2,1);
   // TH1F *hSoSB    = (TH1F*) hMassPlot[0]->Clone(); hSoSB->Reset();    hSoSB->Sumw2();
-  // TH1F *hLogSoSB = (TH1F*) hMassPlot[0]->Clone(); hLogSoSB->Reset(); hLogSoSB->Sumw2();
+  // TH1F *hLogSoSB = (TH1F*) hMassPlot[0]->Clone(); h LogSoSB->Reset(); hLogSoSB->Sumw2();
   // TF1 *f = new TF1("fFit","TMath::Power(x,[0])*[1]+[2]*TMath::Gaus(x,[3],[4])",_fitMassMin,_fitMassMax);
   // f->SetParameters(-4,100,1,126,2);  
   // f->SetParLimits(0,-10,1);

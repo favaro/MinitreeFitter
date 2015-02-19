@@ -11,6 +11,7 @@ DICTFILES :=
 
 PROGRAMS := OptiMvaPhoID
 PROGRAMS += MiniTreeFitter
+PROGRAMS += VBFFitter
 
 NEEDS_ROOT  := yes
 NEEDS_BOOST := yes

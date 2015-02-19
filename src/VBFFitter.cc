@@ -6,12 +6,14 @@
 #include <TCanvas.h>
 #include <TLatex.h>
 #include <TRint.h>
+#include <TH1.h>
 
 #include <iomanip>
 #include <boost/program_options.hpp>
 using namespace std;
 
 
+float AccTot(string rootfile, const vector<TCut>& cuts, string treename = "HToGG" );
 
 int main( int nargc, char **argv ) {
     
@@ -70,22 +72,30 @@ int main( int nargc, char **argv ) {
   // ----  Define the categories ---- // *************************************************************
 
   vector<TCut> smCategories;
+  vector<TCut> melaCategories;
   vector<int>  polOrder;
+ 
+  // temporary MELA categories, based on likelihood scatter plots
+  melaCategories.push_back( "tagCat == 8 && abs(dEtaJJ) > 3.0 && mela_VBFvsgg > 0.6 && mela_SMvsPS_VBF < 0.2" );   // dominated by VBF 0m 
+  melaCategories.push_back( "tagCat == 8 && abs(dEtaJJ) > 3.0 && ( (mela_VBFvsgg > 0.8 && mela_SMvsPS_VBF > 0.4 && mela_SMvsPS_VBF < 0.8) || (mela_VBFvsgg < 0.4 && mela_SMvsPS_VBF < 0.4) )" );   // dominated by ggH
+  melaCategories.push_back( "tagCat == 8 && abs(dEtaJJ) > 3.0 && mela_VBFvsgg > 0.8 && mela_SMvsPS_VBF > 0.8" );   // dominated by VBF SM+ggH
+ 
+   
   if( categorisation == "mva" ) {
     smCategories.push_back( "catMva == 0" ); polOrder.push_back( 5 );
     smCategories.push_back( "catMva == 1" ); polOrder.push_back( 5 );
     smCategories.push_back( "catMva == 2" ); polOrder.push_back( 5 );
     smCategories.push_back( "catMva == 3" ); polOrder.push_back( 5 );   
   } else if( categorisation == "cicpf" ) {
-    smCategories.push_back( "tagCat == 8" );                    polOrder.push_back( 3 );
-    smCategories.push_back( "tagCat == 8 && abs(dEtaJJ) > 3" ); polOrder.push_back( 5 );
-    //    smCategories.push_back( "catBase == 2" ); polOrder.push_back( 4 );
-    //    smCategories.push_back( "catBase == 3" ); polOrder.push_back( 4 );
+    for( int imelacat = 0; imelacat < melaCategories.size(); imelacat++ ) {
+      smCategories.push_back( "maxSCEta < 1.49" && melaCategories[imelacat] );                  polOrder.push_back( 3 );        
+      smCategories.push_back( "maxSCEta > 1.49 && minR9 > 0.94" && melaCategories[imelacat] );  polOrder.push_back( 3 );
+    }
   }
 
   vector<int> polOrderCuts;
   vector<TCut> smCatCuts;
-  if( cat >=  0 && cat < int(smCategories.size()) ) {     // ?  to fit only one specific category instead of all?
+  if( cat >=  0 && cat < int(smCategories.size()) ) {    
     smCatCuts.push_back( smCategories[cat] );
     polOrderCuts.push_back(polOrder[cat]);
   }
@@ -98,15 +108,19 @@ int main( int nargc, char **argv ) {
 
   string hlFactoryCard = "etc/workspaceConfig/mva_sm_model_cond.rs";
   MiniTreeFitter1D fitter(hlFactoryCard);
-  fitter.setPlotDirectory("workspace_SM/" + categorisation + "/");
+  fitter.setPlotDirectory("workspace_VBF/" + categorisation + "/");
   // fitter.setMainCut( basicCut );
 
   string mName = "mass";
   //  RooRealVar *catMva   = new RooRealVar( "catMva"  ,"",-999,10.0); fitter.addVariable( catMva   );
   //  RooRealVar *diphoMva = new RooRealVar( "diphoMva","",-3  ,10.0); fitter.addVariable( diphoMva );
-  RooRealVar *catBase = new RooRealVar( "tagCat" ,"",-999,10.0); fitter.addVariable( catBase  );
-  RooRealVar *dEtaJJ  = new RooRealVar( "dEtaJJ" ,"",-999,10.0); fitter.addVariable( dEtaJJ  );
-  RooRealVar *mass    = new RooRealVar( mName.c_str(),"",mMin,mMax); fitter.addVariable( mass     );
+  RooRealVar *catBase   = new RooRealVar( "tagCat" ,"",-999,10.0); fitter.addVariable( catBase  );
+  RooRealVar *dEtaJJ    = new RooRealVar( "dEtaJJ" ,"",-999,10.0); fitter.addVariable( dEtaJJ  );
+  RooRealVar *minR9     = new RooRealVar( "minR9", "", -1.,10.);   fitter.addVariable( minR9 );
+  RooRealVar *maxSCEta  = new RooRealVar( "maxSCEta", "", -1.,10.);  fitter.addVariable( maxSCEta );
+  RooRealVar *mela_VBFvsgg   = new RooRealVar( "mela_VBFvsgg", "", -1.,10.);   fitter.addVariable( mela_VBFvsgg );
+  RooRealVar *mela_SMvsPS_VBF   = new RooRealVar( "mela_SMvsPS_VBF", "", -1.,10.);   fitter.addVariable( mela_SMvsPS_VBF );
+  RooRealVar *mass      = new RooRealVar( mName.c_str(),"",mMin,mMax); fitter.addVariable( mass     );
   fitter.setMassVarName( mName );
   fitter.setMassVarSet(true);
 
@@ -128,22 +142,29 @@ int main( int nargc, char **argv ) {
     float br = HiggsXS.HiggsBR(mh);
     float lumi = 19.5; //fb-1
     cout << " br = " << br << " - xsec_ggh = " << xsec_ggh << endl;
+
     vector<string> sFiles1, sNames1;
     vector<float>  sXsec1;
-    //    sFiles1.push_back( dirMC + "/mc/job_hgg_gg0odd.root_0.root" );  sNames1.push_back( "spin 0+" ); sXsec1.push_back(20*1000);
-    //    sFiles1.push_back( dirMC + TString::Format("job_summer12_ggH_%3.0f.root_0.root",mh).Data()  );  sNames1.push_back( "ggH"); sXsec1.push_back(xsec_ggh);
-    //    sFiles1.push_back( dirMC + TString::Format("job_summer12_VBF_%3.0f.root_0.root",mh).Data()  );  sNames1.push_back( "VBF"); sXsec1.push_back(xsec_vbf);
-    //sFiles1.push_back( dirMC + TString::Format("job_summer12_VBF_%3.0f.root_0.root",mh).Data()  );  sNames1.push_back( "VBF"); sXsec1.push_back(xsec_vbf);
-    //    sFiles1.push_back( dirMC + TString::Format("job_summer12_WH_ZH_%3.0f.root_0.root",mh).Data());  sNames1.push_back( "VH" ); sXsec1.push_back(xsec_vh );
-    //    sFiles1.push_back( dirMC + TString::Format("job_summer12_TTH_%3.0f.root_0.root",mh).Data()  );  sNames1.push_back( "ttH"); sXsec1.push_back(xsec_tth);
+    vector<string> sFiles2, sNames2;
+    vector<float>  sXsec2;
+    sFiles1.push_back( dirMC + "minitree_jhu_8TeV_SM0p_VBF_125p6_v3.root" );  sNames1.push_back( "VBF0p"); sXsec1.push_back(xsec_vbf);
+    sFiles2.push_back( dirMC + "minitree_jhu_8TeV_0m_VBF_125p6_v3.root"   );  sNames2.push_back( "VBF0m"); sXsec2.push_back(xsec_vbf);
 
-    sFiles1.push_back( dirMC + "minitree_jhu_8TeV_SM0p_VBF_125p_v3.root" );  sNames1.push_back( "VBF"); sXsec1.push_back(xsec_vbf);
-    //sFiles1.push_back( dirMC + "minitree_jhu_8TeV_0m_VBF_125p6_v3.root" );  sNames1.push_back( "VBF"); sXsec1.push_back(xsec_vbf);
-    // sFiles1.push_back( dirMC + "minitree_jhu_8TeV_0p_ggH_125p6_v3.root" );  sNames1.push_back("ggH"); sXsec1.push_back(xsec_ggh);
-
+    float accSM = 0; float accPS = 0;
+    for( size_t ifile = 0; ifile < sFiles1.size(); ifile++ ) {
+      accSM += AccTot( sFiles1[ifile], smCatCuts  )*sXsec1[ifile];
+    }
+    for( size_t ifile = 0; ifile < sFiles2.size(); ifile++ ) {
+      accPS += AccTot( sFiles2[ifile], smCatCuts )*sXsec2[ifile];
+    } 
+    for( size_t ifile = 0; ifile < sFiles2.size(); ifile++) {
+      sXsec2[ifile] *= accSM/accPS;
+    } 
     fitter.addSigSamples(sFiles1,sXsec1,sNames1,br,lumi);
+    fitter.addSigSamples(sFiles2,sXsec2,sNames2,br,lumi);
     if( doFits) {    
-      fitter.modelSignal(125,categorySuffix);
+      fitter.modelSignal(125,categorySuffix + sNames1[0], 0);
+      fitter.modelSignal(125,categorySuffix + sNames2[0], 1);
       fitter.makeSignalWorkspace();
     }
   }
@@ -151,7 +172,6 @@ int main( int nargc, char **argv ) {
   float signi = -1;
   vector<double> signis;
   if( addBkg ) {
-    //    string dataset = dirData + "MiniTreeData_2012abcd.root";
     string dataset = dirData + "data_8TeV_skimMVA_runABCD_withMELA.root";
 
     fitter.unblind();
@@ -176,7 +196,7 @@ int main( int nargc, char **argv ) {
     }
   }
   //  return;
-  if( addSig && addBkg && simFit ) fitter.simultaneousFitOnlyOneSig(0);
+  if( addSig && addBkg && simFit ) fitter.simultaneousFitOnlyOneSig(0);   // CF: WHY ONLY ONE SIGNAL HYPOTHESIS?!  what does this do exactly?
 
   if( addSig && addBkg && doFits ) {
     string datacard = "MVAFact_SM_mh125_cat" + itostr(cat) + ".datacard.txt";
@@ -195,5 +215,21 @@ int main( int nargc, char **argv ) {
   }
   
   return 0;
+}
+
+
+
+float AccTot(string rootfile, const vector<TCut>& cuts, string treename ) {
+  TTree *t =0; t = (TTree*) TFile::Open(rootfile.c_str())->Get(treename.c_str());
+  float ntot = 0;
+  if( t ) {
+    for( unsigned ic = 0 ; ic < cuts.size()     ; ++ic ) {
+      TH1F h("htmpMass","htmpMass",80,100,180);
+      t->Draw("mass>>htmpMass","wei"*cuts[ic],"goff");
+      ntot += h.Integral();
+      cout << "AccCat: " << h.Integral()/(1e5) << "  <-->  " << cuts[ic] << endl;
+    }
+  }
+  return ntot/float(1e5);
 }
 
