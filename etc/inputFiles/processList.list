@@ -1,0 +1,10 @@
+/afs/cern.ch/work/f/favaro/public/minitreesMELAStretch3/CIC/data/data_8TeV_skimMVA_runABCD_withMELA.root	1	1	1	data	data
+/afs/cern.ch/work/f/favaro/public/minitreesMELAStretch3/CIC/mc/minitree_jhu_8TeV_SM0p_VBF_125p6_v3.root	38	1	499756	0^{+}_{SM}(VBF)	VBF0p
+/afs/cern.ch/work/f/favaro/public/minitreesMELAStretch3/CIC/mc/minitree_jhu_8TeV_0m_VBF_125p6_v3.root	8	1	499841		0^{-}(VBF) VBF0m
+/afs/cern.ch/work/f/favaro/public/minitreesMELAStretch3/CIC/mc/minitree_jhu_8TeV_0p_ggH_125p6_v3.root    100     1       499657  0^{+}(gg)       ggH0p
+/afs/cern.ch/work/f/favaro/public/minitreesMELAStretch3/CIC/mc/minitree_jhu_8TeV_0m_ggH_125p6_v3.root    95      1       499964  0^{-}(gg)       ggH0m
+
+
+
+
+	

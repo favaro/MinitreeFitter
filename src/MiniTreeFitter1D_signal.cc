@@ -167,13 +167,13 @@ void MiniTreeFitter1D::modelSignal( float testMass, string suffixName, int sHyp 
   else if( _categories.size() <= 9 )  canvas->Divide(int(TMath::Ceil(_categories.size()/3.)),3);
   else  canvas->Divide(int(TMath::Ceil(_categories.size()/4.)),4);
 
-  float resolutionError[] = { 0.21, 0.21, 0.40, 0.29 };
+  float resolutionError[] = { 0.21, 0.21, 0.40, 0.29 };     // ?
   vector<double> sigEffCat;
   for (unsigned c = 0; c < _categories.size(); ++c) {
     TString sigNameCat = _pdfSigName[sHyp] + TString::Format("_cat%d",c);
 
     /// take signa dataset without xs weight to get meaningful error bars.
-    RooDataSet *data_c = _datasetSignalWoXS[sHyp][c];
+    RooDataSet *data_c = _datasetSignalWoXS[sHyp][c];      // ?
 
     unsigned ncx = c+1;
     canvas->cd(ncx); 
@@ -196,17 +196,17 @@ void MiniTreeFitter1D::modelSignal( float testMass, string suffixName, int sHyp 
     varLocalFit[4]->setVal(0.5); 
     
 
-    RooFormulaVar muWide(   "muWide"    + sigNameCat,"@0+@1",RooArgList(*varLocalFit[0],*varLocalFit[1])); 
-    RooFormulaVar sigmaWide("sigmaWide" + sigNameCat,"@0*@1",RooArgList(*varLocalFit[3],*varLocalFit[2]));
+    RooFormulaVar muWide(   "muWide"    + sigNameCat,"@0+@1",RooArgList(*varLocalFit[0],*varLocalFit[1]));    // sum of means
+    RooFormulaVar sigmaWide("sigmaWide" + sigNameCat,"@0*@1",RooArgList(*varLocalFit[3],*varLocalFit[2]));    // product of widths 
     RooGaussian g1("gaus1" + sigNameCat,"",*mass,*varLocalFit[0],*varLocalFit[2]);
     RooGaussian g2("gaus2" + sigNameCat,"",*mass,muWide,sigmaWide);
 
-    RooAddPdf   MggSig( sigNameCat,"",RooArgList(g1,g2),RooArgList(*varLocalFit[4]));
+    RooAddPdf   MggSig( sigNameCat,"",RooArgList(g1,g2),RooArgList(*varLocalFit[4]));     // final signal pdf
 
     RooRealVar *nSig = new RooRealVar("nSig"  + sigNameCat,"nSig"    ,_datasetSignalWiXS[sHyp][c]->sumEntries());
-    RooExtendPdf MggSigExt( sigNameCat + "Ext","",MggSig,*nSig);
+    RooExtendPdf MggSigExt( sigNameCat + "Ext","",MggSig,*nSig);           // extend the fit
 
-    MggSig.fitTo(*data_c, SumW2Error(kTRUE), Range( minMassFit, maxMassFit) );
+    MggSig.fitTo(*data_c, SumW2Error(kTRUE), Range( minMassFit, maxMassFit) );      // FIT!
     MggSig.plotOn(plotCat, LineColor(kBlue)  ); 
     MggSig.plotOn(plotCat, Components("gaus2" + sigNameCat),LineColor(kOrange+1),LineStyle(kDashed) ); 
     plotCat->SetMinimum(0);
@@ -320,7 +320,8 @@ double sigmaEffective( const TH1F & hist) {
   for(Int_t i=0; i<nb+2; i++) {
     total+=hist.GetBinContent(i);
   }
-  if(total < 50.) {
+
+  if(total < 10.) {     // CF changes this to get an estimate of sigmaEff with few events
     std::cout << "effsigma: Too few entries " << total << std::endl;
     return 0.;
   }
