@@ -47,8 +47,12 @@ void MiniTreeFitter1D::addSigSamples(vector<string> samples    , vector<float> x
   vector<float> scaleMC;
   for( unsigned is = 0; is < samples.size(); is++ ) {
     scaleMC.push_back( xsec[is] * luminosity * br / 100000);
+    cout << " %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% " << endl;
+    cout << is << " xsec = " << xsec[is] << "  scalefactor = " << scaleMC[is] << endl;
     totalScale +=  xsec[is] * luminosity * br / 100000;
   }
+
+  
 
   vector<RooDataSet> datasetSignalWoXS,datasetSignalWiXS; 
   unsigned sHyp = _datasetSignalWoXS.size();
@@ -66,6 +70,7 @@ void MiniTreeFitter1D::addSigSamples(vector<string> samples    , vector<float> x
     _variables.setRealValue("wei_xs", scaleMC[isig] / totalScale );
     RooDataSet tmpWoXS("tmp","tmp",sigTree,_variables,_mainCut); tmpWoXS.addColumn(scaleXS);
     _variables.add( *scaleName);
+
     RooDataSet dWiXS( TString::Format("sig%d_ScaledWiXs_%s",sHyp, signalNames[isig].c_str()),"", 
 		      _variables, Import(tmpWiXS),WeightVar(scaleXS.GetName()) );
     RooDataSet dWoXS( TString::Format("sig%d_ScaledWoXs_%s",sHyp, signalNames[isig].c_str()),"",

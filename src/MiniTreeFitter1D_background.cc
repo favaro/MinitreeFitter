@@ -110,9 +110,12 @@ vector<double> MiniTreeFitter1D::modelBackground( float testMass, string suffixN
     data_c->plotOn(plotMgg, CutRange(rangePlot.c_str()) );
     MggBkgExt.plotOn(plotMgg, LineColor(kBlue), Normalization(1),Range("SB")); 
 
+    cout << " # sHyp = " << _sigFitDone.size() << endl;
+
     for( unsigned sHyp = 0; sHyp < _sigFitDone.size(); sHyp++ )
     if ( _sigFitDone[sHyp] ) {
-      double norm =  5.0*_datasetSignalWiXS[sHyp][c]->sumEntries();
+      // double norm =  5.0*_datasetSignalWiXS[sHyp][c]->sumEntries();
+      double norm =  _datasetSignalWiXS[sHyp][c]->sumEntries();
       if( sHyp > 0 ) norm *= _altSigAccCorr;
       RooAbsPdf *sig = (RooAbsPdf*) _hlf->GetWs()->pdf(TString::Format("%s_cat%d",_pdfSigName[sHyp].c_str(),c));
       if( sHyp == 0 ) sig->plotOn(plotMgg,Normalization(norm,RooAbsPdf::NumEvent), LineColor(kRed) );
@@ -127,7 +130,7 @@ vector<double> MiniTreeFitter1D::modelBackground( float testMass, string suffixN
       double Abkg = alphaP1/(TMath::Power(mmax/100.,alphaP1)-TMath::Power(mmin/100.,alphaP1));
       double Atot = alphaP1/(TMath::Power(_fitMassMax/100.,alphaP1)-TMath::Power(_fitMassMin/100.,alphaP1));
       nB *= Atot / Abkg;
-      cout << " NB[tot] = " <<  varLocalFit[0]->getVal() << " --> " << nB << endl;
+      cout << " NB[tot] from fit = " <<  varLocalFit[0]->getVal() << " extrapolated in signal window --> " << nB << endl;
 
       TF1 f(TString::Format("fIntegral_%d_%d",c,sHyp),"TMath::Power(x/100.0,-[0])*TMath::Gaus(x,[1],[2],1)",mmin,mmax);
       f.SetParameters(alpha,125,_signalSigmaEff[sHyp][c]/sqrt(2.));
@@ -135,14 +138,16 @@ vector<double> MiniTreeFitter1D::modelBackground( float testMass, string suffixN
       // 	sqrt(f.Integral(mmin,mmax) / TMath::TwoPi()) /_signalSigmaEff[sHyp][c] * sqrt(100./Abkg);
       double SoverSqrtB = nS / sqrt(nB) *
 	sqrt(f.Integral(mmin,mmax) / ( 2* sqrt(TMath::Pi()) * _signalSigmaEff[sHyp][c] ) ) * sqrt(100./Abkg);
-
+      
       signiTot += SoverSqrtB*SoverSqrtB;
       signis.push_back(SoverSqrtB);
       nSig.push_back( nS );
       nBkg.push_back( nB* 3.4*_signalSigmaEff[sHyp][c] / (_fitMassMax - _fitMassMin) );
       cout << " mmin = " << mmin << " - max = " << mmax << endl;
-      cout << " Integral[ cat: " << c << "] = " << f.Integral(mmin,mmax)  << " vs " << sqrt(TMath::TwoPi())/4.*_signalSigmaEff[sHyp][c] << endl;
+      cout << " Integral(of fitting function)[ cat: " << c << "] = " << f.Integral(mmin,mmax)  << 
+	" vs " << sqrt(TMath::TwoPi())/4.*_signalSigmaEff[sHyp][c] << endl;
       cout << " Abkg[ cat: " << c << "] = " << Abkg << endl;
+      cout << " expected signal yield (from xsec)[" << c << "] for sHyp[" << sHyp << "] = " << nS << endl;
       cout << " Ns/sqrt(Nb)[ cat: " << c << "] = " << nS/sqrt(nB)  << endl;
       cout << " significance[ cat: " << c << "] = " << SoverSqrtB << endl;
     }
@@ -157,6 +162,7 @@ vector<double> MiniTreeFitter1D::modelBackground( float testMass, string suffixN
     _hlf->GetWs()->defineSet(TString::Format("BkgParam_cat%d",c), vForWS );
     _hlf->GetWs()->import(MggBkgExt);
   }  
+
   signiTot = sqrt(signiTot);
   cout << " significance[ TOTAL ] = " << signiTot  << endl;
   canvas->Print(filePlotXcheck);

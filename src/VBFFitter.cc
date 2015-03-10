@@ -76,11 +76,12 @@ int main( int nargc, char **argv ) {
   vector<int>  polOrder;
  
   // temporary MELA categories, based on likelihood scatter plots
-  melaCategories.push_back( "tagCat == 8 && abs(dEtaJJ) > 3.0 && mela_VBFvsgg > 0.6 && mela_SMvsPS_VBF < 0.2" );   // dominated by VBF 0m 
+  
+  melaCategories.push_back( "tagCat == 8 && abs(dEtaJJ) > 3.0 && mela_VBFvsgg > 0.8 && mela_SMvsPS_VBF < 0.2" );   // dominated by VBF 0m
+  melaCategories.push_back( "tagCat == 8 && abs(dEtaJJ) > 3.0 && mela_VBFvsgg > 0.8 && mela_SMvsPS_VBF > 0.8" );   // dominated by VBF SM+ggH 
   melaCategories.push_back( "tagCat == 8 && abs(dEtaJJ) > 3.0 && ( (mela_VBFvsgg > 0.8 && mela_SMvsPS_VBF > 0.4 && mela_SMvsPS_VBF < 0.8) || (mela_VBFvsgg < 0.4 && mela_SMvsPS_VBF < 0.4) )" );   // dominated by ggH
-  melaCategories.push_back( "tagCat == 8 && abs(dEtaJJ) > 3.0 && mela_VBFvsgg > 0.8 && mela_SMvsPS_VBF > 0.8" );   // dominated by VBF SM+ggH
- 
-   
+
+  
   if( categorisation == "mva" ) {
     smCategories.push_back( "catMva == 0" ); polOrder.push_back( 5 );
     smCategories.push_back( "catMva == 1" ); polOrder.push_back( 5 );
@@ -88,8 +89,10 @@ int main( int nargc, char **argv ) {
     smCategories.push_back( "catMva == 3" ); polOrder.push_back( 5 );   
   } else if( categorisation == "cicpf" ) {
     for( int imelacat = 0; imelacat < melaCategories.size(); imelacat++ ) {
-      smCategories.push_back( "maxSCEta < 1.49" && melaCategories[imelacat] );                  polOrder.push_back( 3 );        
-      smCategories.push_back( "maxSCEta > 1.49 && minR9 > 0.94" && melaCategories[imelacat] );  polOrder.push_back( 3 );
+      smCategories.push_back( "maxSCEta < 1.49" && melaCategories[imelacat] );                  polOrder.push_back( 3 );  
+
+      cout << "***** WARNING: ENDCAP EXCLUDED FOR NOW *****" << endl;      
+      //smCategories.push_back( "maxSCEta > 1.49 && minR9 > 0.94" && melaCategories[imelacat] );  polOrder.push_back( 3 );
     }
   }
 
@@ -135,7 +138,7 @@ int main( int nargc, char **argv ) {
 
   if( addSig ) {
     SMHiggsCrossSection HiggsXS; HiggsXS.is8TeV();
-    float xsec_ggh = 1000*HiggsXS.HiggsSMxsec_ggh(mh); //fb
+    float xsec_ggh = 1000*HiggsXS.HiggsSMxsec_ggh(mh); //fb    INCLUSIVE XSECTION FOR GLUON FUSION...NEED TO COMPUTE ggH+jj 
     float xsec_vbf = 1000*HiggsXS.HiggsSMxsec_vbf(mh); //fb
     float xsec_vh  = 1000*(HiggsXS.HiggsSMxsec_wh(mh) + HiggsXS.HiggsSMxsec_zh(mh)); //fb
     float xsec_tth = 1000*HiggsXS.HiggsSMxsec_tth(mh); //fb
@@ -148,6 +151,7 @@ int main( int nargc, char **argv ) {
     vector<string> sFiles2, sNames2;
     vector<float>  sXsec2;
     sFiles1.push_back( dirMC + "minitree_jhu_8TeV_SM0p_VBF_125p6_v3.root" );  sNames1.push_back( "VBF0p"); sXsec1.push_back(xsec_vbf);
+    sFiles1.push_back( dirMC + "minitree_jhu_8TeV_0p_ggH_125p6_v3.root" );    sNames1.push_back( "ggH0p"); sXsec1.push_back(xsec_ggh);
     sFiles2.push_back( dirMC + "minitree_jhu_8TeV_0m_VBF_125p6_v3.root"   );  sNames2.push_back( "VBF0m"); sXsec2.push_back(xsec_vbf);
 
     float accSM = 0; float accPS = 0;
@@ -162,6 +166,10 @@ int main( int nargc, char **argv ) {
     } 
     fitter.addSigSamples(sFiles1,sXsec1,sNames1,br,lumi);
     fitter.addSigSamples(sFiles2,sXsec2,sNames2,br,lumi);
+
+    cout << " ************************************************** xsections SM = " << sXsec1[0] << " PS = " << sXsec2[0] << 
+      " br = " << br << endl;
+
     if( doFits) {    
       fitter.modelSignal(125,categorySuffix + sNames1[0], 0);
       fitter.modelSignal(125,categorySuffix + sNames2[0], 1);
